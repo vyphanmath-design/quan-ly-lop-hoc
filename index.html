@@ -79,6 +79,12 @@
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
     .bg-striped-off { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 4px, transparent 4px, transparent 8px); background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+  /* Tối ưu giao diện trên điện thoại */
+    @media (max-width: 640px) {
+      body { padding: 4px !important; }
+      table { font-size: 10px !important; }
+      .tkb-cell-editable { min-height: 36px !important; padding: 2px !important; }
+    }
   </style>
 </head>
 <body class="bg-[#f1f5f9] font-sans text-slate-800 p-3 sm:p-6 pb-24 sm:pb-6 antialiased">
@@ -612,25 +618,25 @@
     </div>
   </div>
 
- <!-- TEMPLATE ẨN ĐỂ XUẤT ẢNH TKB CÁ NHÂN (ĐÃ THU GỌN & THÊM SĐT) -->
+<!-- TEMPLATE ẨN ĐỂ XUẤT ẢNH TKB CÁ NHÂN (ĐÃ SỬA LỖI MẤT CHỮ) -->
   <div class="absolute top-0 left-0 -z-50 opacity-0 pointer-events-none">
-      <div id="exportTkbCaptureArea" class="bg-white p-4 w-[420px] rounded-2xl border border-slate-200 relative overflow-hidden shadow-sm">
+      <div id="exportTkbCaptureArea" class="bg-white p-5 w-[520px] rounded-2xl border border-slate-200 relative overflow-hidden shadow-sm">
          <!-- Tiêu đề Ảnh -->
-         <div class="text-center border-b-2 border-indigo-100 pb-2 mb-3">
-             <h2 class="text-[20px] font-black text-[#0b2447] tracking-wider uppercase">THỜI KHÓA BIỂU</h2>
-             <p class="text-[15px] font-black text-indigo-700 uppercase mt-0.5" id="exportTkbTeacherName"></p>
-             <p class="text-[12px] font-bold text-red-600 mt-0.5" id="exportTkbTeacherPhone"></p>
-             <p class="text-[11px] font-semibold text-slate-500 mt-0.5" id="exportTkbDateRange"></p>
+         <div class="text-center border-b-2 border-indigo-100 pb-3 mb-3">
+             <h2 class="text-[22px] font-black text-[#0b2447] tracking-wider uppercase">THỜI KHÓA BIỂU</h2>
+             <p class="text-[16px] font-black text-indigo-700 uppercase mt-0.5" id="exportTkbTeacherName"></p>
+             <p class="text-[13px] font-bold text-red-600 mt-0.5" id="exportTkbTeacherPhone"></p>
+             <p class="text-[12px] font-semibold text-slate-500 mt-0.5" id="exportTkbDateRange"></p>
          </div>
          
          <!-- Nội dung TKB -->
-         <div id="exportTkbContent" class="space-y-2">
+         <div id="exportTkbContent" class="space-y-2.5">
             <!-- Dữ liệu JS sẽ đổ vào đây -->
          </div>
          
          <!-- Chân trang -->
-         <div class="text-center mt-3 pt-2 border-t border-dashed border-slate-200">
-             <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Hệ thống quản lý trung tâm Mr Vy</p>
+         <div class="text-center mt-4 pt-2 border-t border-dashed border-slate-200">
+             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Hệ thống quản lý trung tâm Mr Vy</p>
          </div>
       </div>
   </div>
@@ -2663,7 +2669,7 @@ currentConfigData.sort((a, b) => {
         return schedule;
     }
 
-    async function exportTeacherTKB() {
+   async function exportTeacherTKB() {
         const filterSelect = document.getElementById('tkbTeacherFilter');
         const teacherName = filterSelect.value;
         
@@ -2701,11 +2707,11 @@ currentConfigData.sort((a, b) => {
                 if (dayClasses.length === 0) return;
                 hasClasses = true;
                 
-                html += `<div class="mb-2">
-                            <div class="bg-indigo-600 text-white font-black text-[12px] uppercase px-3 py-1 rounded-t-lg flex items-center gap-1.5">
-                                <i class="fa-regular fa-calendar-check text-indigo-200 text-[11px]"></i> ${daysNames[dayIdx]}
+                html += `<div class="mb-2.5">
+                            <div class="bg-indigo-600 text-white font-black text-[13px] uppercase px-3.5 py-1.5 rounded-t-xl flex items-center gap-2">
+                                <i class="fa-regular fa-calendar-check text-indigo-200 text-[12px]"></i> <span>${daysNames[dayIdx]}</span>
                             </div>
-                            <div class="bg-slate-50 border-x border-b border-indigo-100 rounded-b-lg p-1.5 space-y-1.5">`;
+                            <div class="bg-slate-50 border-x border-b border-indigo-100 rounded-b-xl p-2 space-y-2">`;
                 
                 dayClasses.forEach(c => {
                     let formattedClass = c.classInfo;
@@ -2716,33 +2722,30 @@ currentConfigData.sort((a, b) => {
                         formattedClass = `Lớp ${c.classInfo}`;
                     }
 
-                    // Xử lý hiển thị giờ thông minh (Bỏ chữ "Theo ca", chỉ lấy giờ chuẩn hoặc giờ tùy biến)
                     let rawShift = c.shift || '';
                     let timeDisplay = '';
 
                     if (rawShift.includes(':')) {
-                        // Tách lấy đoạn giờ sau dấu hai chấm (Ví dụ: "Ca 1: 5h30-7h" -> "5h30-7h")
                         timeDisplay = rawShift.split(':').slice(1).join(':').trim();
                     } else {
                         timeDisplay = rawShift;
                     }
 
-                    // Nếu có timeInfo riêng (giờ khác), ưu tiên lấy timeInfo
                     if (c.timeInfo && c.timeInfo.trim() !== '') {
                         timeDisplay = c.timeInfo.trim();
                     }
 
-                    let badge = c.isMakeup ? `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded text-[9px] font-black border border-amber-300">BÙ</span>` : '';
-                    let subBadge = c.isSub ? `<span class="bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded text-[9px] font-black border border-purple-300">DẠY THAY</span>` : '';
+                    let badge = c.isMakeup ? `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded text-[10px] font-black border border-amber-300">BÙ</span>` : '';
+                    let subBadge = c.isSub ? `<span class="bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-black border border-purple-300">DẠY THAY</span>` : '';
                     let badgesHtml = (badge || subBadge) ? `<div class="flex gap-1 ml-2">${badge}${subBadge}</div>` : '';
                     
-                    html += `<div class="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between text-[11px]">
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-[#0b2447] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"><i class="fa-regular fa-clock text-indigo-500 mr-1"></i>${timeDisplay}</span>
-                                    <span class="text-slate-600 font-semibold"><i class="fa-solid fa-door-open text-emerald-600 mr-0.5"></i>${c.room}</span>
+                    html += `<div class="bg-white p-2.5 rounded-lg border border-slate-200 flex items-center justify-between text-[12px]">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="font-bold text-[#0b2447] bg-indigo-50 px-2.5 py-1 rounded border border-indigo-100 whitespace-nowrap"><i class="fa-regular fa-clock text-indigo-500 mr-1"></i>${timeDisplay}</span>
+                                    <span class="text-slate-700 font-semibold"><i class="fa-solid fa-door-open text-emerald-600 mr-1"></i>${c.room}</span>
                                 </div>
                                 <div class="flex items-center">
-                                    <span class="font-black text-red-600 bg-red-50 px-2.5 py-0.5 rounded border border-red-200">${formattedClass}</span>
+                                    <span class="font-black text-red-600 bg-red-50 px-3 py-1 rounded border border-red-200 whitespace-nowrap">${formattedClass}</span>
                                     ${badgesHtml}
                                 </div>
                              </div>`;
