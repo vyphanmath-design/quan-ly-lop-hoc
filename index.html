@@ -1946,6 +1946,12 @@
       document.getElementById('labelConfigMonth').innerText = `(${targetMonth})`;
       document.getElementById('formMonthRec').value = targetMonth;
       currentConfigData = (Array.isArray(appData.cauHinh) ? appData.cauHinh : []).filter(c => c.thang === targetMonth);
+// Sắp xếp Tên GV A-Z, sau đó đến Tên Lớp A-Z
+currentConfigData.sort((a, b) => {
+  let gvCompare = String(a.tenGv || '').localeCompare(String(b.tenGv || ''), 'vi', { sensitivity: 'base' });
+  if (gvCompare !== 0) return gvCompare;
+  return String(a.tenLop || '').localeCompare(String(b.tenLop || ''), 'vi', { sensitivity: 'base', numeric: true });
+});
       
       calculateDebt();
       renderCauHinh();
@@ -2096,11 +2102,15 @@
     function renderDebtList() {
       const container = document.getElementById('debtListContainer');
       const gvs = Object.keys(cachedDebtInfo);
+      const targetMonth = document.getElementById('globalMonthSelect').value;
 
       if (gvs.length === 0) {
         container.innerHTML = '<div class="p-5 text-center text-slate-400 font-semibold text-xs">Chưa có thông tin (cần Cấu hình học phí trước)</div>';
         return;
       }
+
+      // Sắp xếp danh sách giáo viên theo bảng chữ cái A-Z
+      gvs.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
 
       let html = '';
       gvs.forEach((gv, idx) => {
@@ -2111,9 +2121,23 @@
         let btnHtml = '';
 
         if (info.totalDebt > 0) {
-          const detailStr = info.details.map(d => d.month.replace('Tháng ', 'T') + ': ' + d.amount.toLocaleString('vi-VN') + ' đ').join(' | ');
-          debtTextHtml = '<div class="text-red-600 font-extrabold mt-1">Tổng Phí: ' + info.totalDebt.toLocaleString('vi-VN') + ' đ</div>' +
-                         '<div class="text-[10px] text-slate-500 italic mt-0.5">(' + detailStr + ')</div>';
+          // Tính riêng tiền của tháng hiện tại đang chọn
+          let currentMonthExpected = info.monthBreakdown[targetMonth] || 0;
+          // Tính tiền nợ từ các tháng trước
+          let previousDebt = info.totalDebt - currentMonthExpected;
+
+          let detailParts = [];
+          if (currentMonthExpected > 0) {
+            detailParts.append ? detailParts.append(`Tháng này (${targetMonth.replace('Tháng ', 'T')}): ${currentMonthExpected.toLocaleString('vi-VN')} đ`) : detailParts.push(`Tháng này (${targetMonth.replace('Tháng ', 'T')}): ${currentMonthExpected.toLocaleString('vi-VN')} đ`);
+          }
+          if (previousDebt > 0) {
+            detailParts.push(`Nợ các tháng trước: ${previousDebt.toLocaleString('vi-VN')} đ`);
+          }
+
+          const detailStr = detailParts.join(' | ');
+
+          debtTextHtml = '<div class="text-red-600 font-extrabold mt-1">Tổng Phí Cần Thu: ' + info.totalDebt.toLocaleString('vi-VN') + ' đ</div>' +
+                         '<div class="text-[10px] text-slate-600 font-semibold mt-0.5 bg-white/80 px-2 py-1 rounded border border-red-100 inline-block">(' + detailStr + ')</div>';
           btnHtml = '<button type="button" onclick="triggerBillModalFromList(\'' + gv + '\')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-[10px] sm:text-xs shadow flex items-center gap-1.5 transition active:scale-95"><i class="fa-solid fa-bell"></i> Báo Phí</button>';
         } else {
           debtTextHtml = '<div class="text-emerald-700 font-bold mt-1 text-xs"><i class="fa-solid fa-circle-check"></i> Đã thu đủ (0 đ)</div>';
