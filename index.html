@@ -2583,16 +2583,25 @@ currentConfigData.sort((a, b) => {
     function updateTeacherPhone(name, phone) {
         if (!adminToken) return showToast('Lỗi bảo mật: Thiếu Token. Vui lòng đăng nhập lại!', true);
         if (!Array.isArray(appData.teachers)) appData.teachers = [];
-        let found = appData.teachers.find(t => t.hoTen.toLowerCase() === name.toLowerCase());
-        if (found) found.sdt = phone;
-        else appData.teachers.push({ hoTen: name, sdt: phone, mon: '' });
+        
+        let found = appData.teachers.find(t => t.hoTen && t.hoTen.toLowerCase() === name.toLowerCase());
+        if (found) {
+            found.sdt = phone;
+        } else {
+            appData.teachers.push({ hoTen: name, sdt: phone, mon: '' });
+        }
+
+        const origHtmlTitle = document.title;
+        showToast('Đang lưu SĐT...');
 
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
             .withSuccessHandler(() => showToast('✓ Đã lưu SĐT của ' + name))
             .withFailureHandler(err => showToast(err.message, true))
             .saveAllTeachers(appData.teachers, adminToken);
-        } else { showToast('✓ Đã lưu SĐT (local)'); }
+        } else { 
+            showToast('✓ Đã lưu SĐT thành công!'); 
+        }
     }
 
     function getTeacherSchedule(targetTeacher) {
