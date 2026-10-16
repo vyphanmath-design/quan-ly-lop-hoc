@@ -2105,7 +2105,7 @@ currentConfigData.sort((a, b) => {
       const targetMonth = document.getElementById('globalMonthSelect').value;
 
       if (gvs.length === 0) {
-        container.innerHTML = '<div class="p-5 text-center text-slate-400 font-semibold text-xs">Chưa có thông tin (cần Cấu hình học phí trước)</div>';
+        container.innerHTML = '<div class="p-5 text-center text-slate-400 font-semibold text-xs">Chưa có thông tin (cần Cấu hình phí quản lý trước)</div>';
         return;
       }
 
@@ -2118,36 +2118,47 @@ currentConfigData.sort((a, b) => {
       // Sắp xếp theo bảng chữ cái A-Z
       indebtedGvs.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
 
-      // Tính tổng tiền cần thu của tất cả các giáo viên còn nợ
+      // Tính tổng tiền cần thu chung
       let grandTotalDebt = 0;
       indebtedGvs.forEach(gv => {
         grandTotalDebt += cachedDebtInfo[gv].totalDebt;
       });
 
-      // Tạo phần hiển thị Tổng số tiền cần thu chung lên đầu bảng
+      // Lấy danh sách lớp chi tiết cho từng GV ở tháng chọn
+      const safeCauHinh = Array.isArray(appData.cauHinh) ? appData.cauHinh : [];
+
       let summaryHeaderHtml = `
         <div class="bg-gradient-to-r from-red-600 to-rose-700 text-white p-4 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
           <div class="flex items-center gap-2.5">
             <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg"><i class="fa-solid fa-wallet"></i></div>
             <div>
-              <div class="text-[11px] font-bold uppercase tracking-wider text-red-100">Tổng công nợ trung tâm (${targetMonth})</div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-red-100">TỔNG PHÍ QUẢN LÝ CẦN THU (${targetMonth})</div>
               <div class="text-xl sm:text-2xl font-black">${grandTotalDebt.toLocaleString('vi-VN')} đ</div>
             </div>
           </div>
           <div class="text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 font-medium">
-            Có <b>${indebtedGvs.length}</b> giáo viên chưa hoàn tất học phí
+            Có <b>${indebtedGvs.length}</b> giáo viên chưa hoàn tất phí quản lý
           </div>
         </div>
       `;
 
       if (indebtedGvs.length === 0) {
-        container.innerHTML = summaryHeaderHtml + '<div class="p-8 text-center text-emerald-600 font-bold bg-emerald-50 rounded-2xl border border-emerald-200">🎉 Tuyệt vời! Tất cả giáo viên đã đóng đủ học phí, không còn ai nợ phí.</div>';
+        container.innerHTML = summaryHeaderHtml + '<div class="p-8 text-center text-emerald-600 font-bold bg-emerald-50 rounded-2xl border border-emerald-200">🎉 Tuyệt vời! Tất cả giáo viên đã hoàn thành phí quản lý.</div>';
         return;
       }
 
       let html = summaryHeaderHtml;
       indebtedGvs.forEach((gv, idx) => {
         const info = cachedDebtInfo[gv];
+
+        // Lấy danh sách lớp và sĩ số rõ ràng từng lớp
+        let teacherClasses = safeCauHinh.filter(c => c.tenGv === gv && c.thang === targetMonth);
+        let classDetailStr = '';
+        if (teacherClasses.length > 0) {
+          classDetailStr = teacherClasses.map(c => `Lớp: ${c.tenLop} - Sĩ số: ${c.siSo} hs`).join(' | ');
+        } else {
+          classDetailStr = info.classesTargetMonth || 'Chưa có lớp';
+        }
 
         let currentMonthExpected = info.monthBreakdown[targetMonth] || 0;
         let previousDebt = info.totalDebt - currentMonthExpected;
@@ -2173,7 +2184,7 @@ currentConfigData.sort((a, b) => {
                   '<div class="flex items-center gap-3">' +
                     '<span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ' + numberBox + '">' + (idx+1) + '</span>' +
                     '<div>' +
-                      '<div class="font-extrabold text-slate-800 text-sm">' + gv + ' <span class="font-semibold text-xs text-slate-400 ml-1">(' + (info.classesTargetMonth || 'Chưa có lớp') + ')</span></div>' +
+                      '<div class="font-extrabold text-slate-800 text-sm">' + gv + ' <span class="font-semibold text-xs text-blue-700 ml-1">(' + classDetailStr + ')</span></div>' +
                       debtTextHtml +
                     '</div>' +
                   '</div>' +
