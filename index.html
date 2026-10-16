@@ -2109,44 +2109,67 @@ currentConfigData.sort((a, b) => {
         return;
       }
 
-      // Sắp xếp danh sách giáo viên theo bảng chữ cái A-Z
-      gvs.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
-
-      let html = '';
-      gvs.forEach((gv, idx) => {
+      // Lọc danh sách: Chỉ lấy những giáo viên còn nợ (totalDebt > 0)
+      const indebtedGvs = gvs.filter(gv => {
         const info = cachedDebtInfo[gv];
-        if (info.totalDebt === 0 && !info.classesTargetMonth) return;
+        return info.totalDebt > 0;
+      });
 
-        let debtTextHtml = '';
-        let btnHtml = '';
+      // Sắp xếp theo bảng chữ cái A-Z
+      indebtedGvs.sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }));
 
-        if (info.totalDebt > 0) {
-          // Tính riêng tiền của tháng hiện tại đang chọn
-          let currentMonthExpected = info.monthBreakdown[targetMonth] || 0;
-          // Tính tiền nợ từ các tháng trước
-          let previousDebt = info.totalDebt - currentMonthExpected;
+      // Tính tổng tiền cần thu của tất cả các giáo viên còn nợ
+      let grandTotalDebt = 0;
+      indebtedGvs.forEach(gv => {
+        grandTotalDebt += cachedDebtInfo[gv].totalDebt;
+      });
 
-          let detailParts = [];
-          if (currentMonthExpected > 0) {
-            detailParts.append ? detailParts.append(`Tháng này (${targetMonth.replace('Tháng ', 'T')}): ${currentMonthExpected.toLocaleString('vi-VN')} đ`) : detailParts.push(`Tháng này (${targetMonth.replace('Tháng ', 'T')}): ${currentMonthExpected.toLocaleString('vi-VN')} đ`);
-          }
-          if (previousDebt > 0) {
-            detailParts.push(`Nợ các tháng trước: ${previousDebt.toLocaleString('vi-VN')} đ`);
-          }
+      // Tạo phần hiển thị Tổng số tiền cần thu chung lên đầu bảng
+      let summaryHeaderHtml = `
+        <div class="bg-gradient-to-r from-red-600 to-rose-700 text-white p-4 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-2 mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center text-lg"><i class="fa-solid fa-wallet"></i></div>
+            <div>
+              <div class="text-[11px] font-bold uppercase tracking-wider text-red-100">Tổng công nợ trung tâm (${targetMonth})</div>
+              <div class="text-xl sm:text-2xl font-black">${grandTotalDebt.toLocaleString('vi-VN')} đ</div>
+            </div>
+          </div>
+          <div class="text-xs bg-white/10 px-3 py-1.5 rounded-xl border border-white/20 font-medium">
+            Có <b>${indebtedGvs.length}</b> giáo viên chưa hoàn tất học phí
+          </div>
+        </div>
+      `;
 
-          const detailStr = detailParts.join(' | ');
+      if (indebtedGvs.length === 0) {
+        container.innerHTML = summaryHeaderHtml + '<div class="p-8 text-center text-emerald-600 font-bold bg-emerald-50 rounded-2xl border border-emerald-200">🎉 Tuyệt vời! Tất cả giáo viên đã đóng đủ học phí, không còn ai nợ phí.</div>';
+        return;
+      }
 
-          debtTextHtml = '<div class="text-red-600 font-extrabold mt-1">Tổng Phí Cần Thu: ' + info.totalDebt.toLocaleString('vi-VN') + ' đ</div>' +
-                         '<div class="text-[10px] text-slate-600 font-semibold mt-0.5 bg-white/80 px-2 py-1 rounded border border-red-100 inline-block">(' + detailStr + ')</div>';
-          btnHtml = '<button type="button" onclick="triggerBillModalFromList(\'' + gv + '\')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-[10px] sm:text-xs shadow flex items-center gap-1.5 transition active:scale-95"><i class="fa-solid fa-bell"></i> Báo Phí</button>';
-        } else {
-          debtTextHtml = '<div class="text-emerald-700 font-bold mt-1 text-xs"><i class="fa-solid fa-circle-check"></i> Đã thu đủ (0 đ)</div>';
+      let html = summaryHeaderHtml;
+      indebtedGvs.forEach((gv, idx) => {
+        const info = cachedDebtInfo[gv];
+
+        let currentMonthExpected = info.monthBreakdown[targetMonth] || 0;
+        let previousDebt = info.totalDebt - currentMonthExpected;
+
+        let detailParts = [];
+        if (currentMonthExpected > 0) {
+          detailParts.push(`Tháng này (${targetMonth.replace('Tháng ', 'T')}): ${currentMonthExpected.toLocaleString('vi-VN')} đ`);
+        }
+        if (previousDebt > 0) {
+          detailParts.push(`Nợ các tháng trước: ${previousDebt.toLocaleString('vi-VN')} đ`);
         }
 
-        let bgBox = info.totalDebt > 0 ? 'bg-red-50/50 border-red-200' : 'bg-emerald-50/50 border-emerald-200';
-        let numberBox = info.totalDebt > 0 ? 'bg-red-200 text-red-800' : 'bg-emerald-200 text-emerald-800';
+        const detailStr = detailParts.join(' | ');
 
-        html += '<div class="p-4 rounded-2xl border ' + bgBox + ' flex items-center justify-between transition hover:shadow-sm">' +
+        let debtTextHtml = '<div class="text-red-600 font-extrabold mt-1">Tổng Phí Cần Thu: ' + info.totalDebt.toLocaleString('vi-VN') + ' đ</div>' +
+                           '<div class="text-[10px] text-slate-600 font-semibold mt-0.5 bg-white/80 px-2 py-1 rounded border border-red-100 inline-block">(' + detailStr + ')</div>';
+        let btnHtml = '<button type="button" onclick="triggerBillModalFromList(\'' + gv + '\')" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl text-[10px] sm:text-xs shadow flex items-center gap-1.5 transition active:scale-95"><i class="fa-solid fa-bell"></i> Báo Phí</button>';
+
+        let bgBox = 'bg-red-50/50 border-red-200';
+        let numberBox = 'bg-red-200 text-red-800';
+
+        html += '<div class="p-4 rounded-2xl border ' + bgBox + ' flex items-center justify-between transition hover:shadow-sm mb-3">' +
                   '<div class="flex items-center gap-3">' +
                     '<span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ' + numberBox + '">' + (idx+1) + '</span>' +
                     '<div>' +
@@ -2157,7 +2180,7 @@ currentConfigData.sort((a, b) => {
                   '<div>' + btnHtml + '</div>' +
                 '</div>';
       });
-      container.innerHTML = html || '<div class="p-5 text-center text-slate-400 font-semibold text-xs">Không có khoản phí nào.</div>';
+      container.innerHTML = html;
     }
 
     function populateTeacherDropdown() {
