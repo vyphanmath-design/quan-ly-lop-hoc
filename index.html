@@ -612,28 +612,25 @@
     </div>
   </div>
 
- <!-- TEMPLATE ẨN ĐỂ XUẤT ẢNH TKB CÁ NHÂN -->
+ <!-- TEMPLATE ẨN ĐỂ XUẤT ẢNH TKB CÁ NHÂN (ĐÃ THU GỌN & THÊM SĐT) -->
   <div class="absolute top-0 left-0 -z-50 opacity-0 pointer-events-none">
-      <div id="exportTkbCaptureArea" class="bg-slate-50 p-5 sm:p-6 w-[480px] rounded-3xl border border-slate-200 relative overflow-hidden">
-         <!-- Khối trang trí góc phải -->
-         <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-100/50 rounded-bl-full -z-10"></div>
-         <div class="absolute bottom-0 left-0 w-24 h-24 bg-emerald-50 rounded-tr-full -z-10"></div>
-         
+      <div id="exportTkbCaptureArea" class="bg-white p-4 w-[420px] rounded-2xl border border-slate-200 relative overflow-hidden shadow-sm">
          <!-- Tiêu đề Ảnh -->
-         <div class="text-center border-b-[3px] border-indigo-100 pb-3 mb-4 relative z-10">
-             <h2 class="text-[28px] font-black text-[#0b2447] tracking-widest uppercase drop-shadow-sm">THỜI KHÓA BIỂU</h2>
-             <p class="text-[18px] font-black text-indigo-700 uppercase tracking-wide mt-1" id="exportTkbTeacherName"></p>
-             <p class="text-[13px] font-bold text-slate-500 mt-1" id="exportTkbDateRange"></p>
+         <div class="text-center border-b-2 border-indigo-100 pb-2 mb-3">
+             <h2 class="text-[20px] font-black text-[#0b2447] tracking-wider uppercase">THỜI KHÓA BIỂU</h2>
+             <p class="text-[15px] font-black text-indigo-700 uppercase mt-0.5" id="exportTkbTeacherName"></p>
+             <p class="text-[12px] font-bold text-red-600 mt-0.5" id="exportTkbTeacherPhone"></p>
+             <p class="text-[11px] font-semibold text-slate-500 mt-0.5" id="exportTkbDateRange"></p>
          </div>
          
          <!-- Nội dung TKB -->
-         <div id="exportTkbContent" class="space-y-3 relative z-10">
+         <div id="exportTkbContent" class="space-y-2">
             <!-- Dữ liệu JS sẽ đổ vào đây -->
          </div>
          
          <!-- Chân trang -->
-         <div class="text-center mt-5 pt-3 border-t border-dashed border-slate-300 relative z-10">
-             <p class="text-[11px] font-black text-slate-400 uppercase tracking-widest">Hệ thống quản lý trung tâm Mr Vy</p>
+         <div class="text-center mt-3 pt-2 border-t border-dashed border-slate-200">
+             <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Hệ thống quản lý trung tâm Mr Vy</p>
          </div>
       </div>
   </div>
@@ -2679,6 +2676,13 @@ currentConfigData.sort((a, b) => {
         for (let i = 0; i < teachersToProcess.length; i++) {
             let currentTeacher = teachersToProcess[i];
             
+            // Lấy SĐT của giáo viên từ appData.teachers
+            let teacherPhone = '';
+            if (Array.isArray(appData.teachers)) {
+                let foundT = appData.teachers.find(t => t.hoTen && t.hoTen.toLowerCase() === currentTeacher.toLowerCase());
+                if (foundT && foundT.sdt) teacherPhone = foundT.sdt;
+            }
+
             const schedule = getTeacherSchedule(currentTeacher);
             const daysNames = ['THỨ 2', 'THỨ 3', 'THỨ 4', 'THỨ 5', 'THỨ 6', 'THỨ 7', 'CHỦ NHẬT'];
             
@@ -2689,11 +2693,11 @@ currentConfigData.sort((a, b) => {
                 if (dayClasses.length === 0) return;
                 hasClasses = true;
                 
-                html += `<div class="mb-3 overflow-hidden shadow-sm">
-                            <div class="bg-indigo-600 text-white font-black text-[15px] uppercase tracking-widest px-4 py-2 rounded-t-xl flex items-center gap-2">
-                                <i class="fa-regular fa-calendar-check text-indigo-200"></i> ${daysNames[dayIdx]}
+                html += `<div class="mb-2">
+                            <div class="bg-indigo-600 text-white font-black text-[12px] uppercase px-3 py-1 rounded-t-lg flex items-center gap-1.5">
+                                <i class="fa-regular fa-calendar-check text-indigo-200 text-[11px]"></i> ${daysNames[dayIdx]}
                             </div>
-                            <div class="bg-white border-x border-b border-indigo-100 rounded-b-xl p-2.5 space-y-2">`;
+                            <div class="bg-slate-50 border-x border-b border-indigo-100 rounded-b-lg p-1.5 space-y-1.5">`;
                 
                 dayClasses.forEach(c => {
                     let formattedClass = c.classInfo;
@@ -2711,28 +2715,19 @@ currentConfigData.sort((a, b) => {
                         displayShift = c.timeInfo ? 'Ca 2 Tối' : displayShift.replace('Ca 2', 'Ca 2 Tối');
                     }
 
-                    let badge = c.isMakeup ? `<span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-md text-[11px] font-black tracking-wide border border-amber-300 shadow-sm">BÙ</span>` : '';
-                    let subBadge = c.isSub ? `<span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-md text-[11px] font-black tracking-wide border border-purple-300 shadow-sm">DẠY THAY</span>` : '';
-                    let badgesHtml = (badge || subBadge) ? `<div class="flex justify-end gap-1.5 mt-1.5 pt-1.5 border-t border-slate-100">${badge}${subBadge}</div>` : '';
+                    let badge = c.isMakeup ? `<span class="bg-amber-100 text-amber-700 px-1.5 py-0.2 rounded text-[9px] font-black border border-amber-300">BÙ</span>` : '';
+                    let subBadge = c.isSub ? `<span class="bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded text-[9px] font-black border border-purple-300">DẠY THAY</span>` : '';
+                    let badgesHtml = (badge || subBadge) ? `<div class="flex gap-1 ml-2">${badge}${subBadge}</div>` : '';
                     
-                    html += `<div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                <div class="flex justify-between items-center border-b border-slate-200 pb-1.5 mb-2">
-                                    <div class="font-extrabold text-[#0b2447] text-[16px] flex items-center gap-2">
-                                        <i class="fa-regular fa-clock text-indigo-500"></i> ${displayShift}
-                                    </div>
-                                    <div class="font-bold text-slate-500 text-[14px] bg-white px-2.5 py-0.5 rounded-md border border-slate-200 shadow-sm">
-                                        <i class="fa-solid fa-hourglass-half text-slate-400 mr-1"></i> ${c.timeInfo || 'Theo ca'}
-                                    </div>
+                    html += `<div class="bg-white p-2 rounded-lg border border-slate-200 flex items-center justify-between text-[11px]">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-[#0b2447] bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100"><i class="fa-regular fa-clock text-indigo-500 mr-1"></i>${displayShift} (${c.timeInfo || 'Theo ca'})</span>
+                                    <span class="text-slate-600 font-semibold"><i class="fa-solid fa-door-open text-emerald-600 mr-0.5"></i>${c.room}</span>
                                 </div>
-                                <div class="flex justify-between items-center">
-                                    <div class="font-bold text-slate-600 text-[15px] flex items-center gap-2">
-                                        <i class="fa-solid fa-door-open text-emerald-500"></i> Phòng: <span class="text-slate-800">${c.room}</span>
-                                    </div>
-                                    <div class="font-black text-red-600 text-[15px] bg-red-50 px-3 py-1 rounded-lg border border-red-200 shadow-sm">
-                                        ${formattedClass}
-                                    </div>
+                                <div class="flex items-center">
+                                    <span class="font-black text-red-600 bg-red-50 px-2.5 py-0.5 rounded border border-red-200">${formattedClass}</span>
+                                    ${badgesHtml}
                                 </div>
-                                ${badgesHtml}
                              </div>`;
                 });
                 html += `</div></div>`;
@@ -2750,6 +2745,15 @@ currentConfigData.sort((a, b) => {
             let dateRangeStr = `Tuần: ${monday.getDate()}/${monday.getMonth()+1} - ${sunday.getDate()}/${sunday.getMonth()+1}/${sunday.getFullYear()}`;
 
             document.getElementById('exportTkbTeacherName').innerText = "Giáo Viên: " + currentTeacher;
+            
+            const phoneEl = document.getElementById('exportTkbTeacherPhone');
+            if (teacherPhone) {
+                phoneEl.innerText = "SĐT: " + teacherPhone;
+                phoneEl.classList.remove('hidden');
+            } else {
+                phoneEl.classList.add('hidden');
+            }
+
             document.getElementById('exportTkbDateRange').innerText = dateRangeStr;
             document.getElementById('exportTkbContent').innerHTML = html;
 
