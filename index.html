@@ -2346,39 +2346,83 @@ currentConfigData.sort((a, b) => {
          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
       }
       
-      let cleanGv = removeVietnameseTones(gv);
-      // Lược bỏ bớt ký tự đặc biệt trong nội dung CK để API hoạt động ổn định nhất
-      let qrContent = 'Giao vien ' + cleanGv + ' thu phi ' + monthStr.replace(/\//g, '-');
+      let cleanGv = removeVietnameseTones(gv).replace(/[^a-zA-Z0-9\s]/g, '');
+      // Chuẩn hóa nội dung chuyển khoản chỉ giữ chữ và số để VietQR không bao giờ lỗi
+      let cleanMonth = monthStr.replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+      let qrContent = 'GV ' + cleanGv + ' nop phi T' + cleanMonth;
       
-      // ĐÃ SỬA: Đưa về chuẩn mã BIN 970436 và đuôi bắt buộc .png của VietQR
-      const qrUrl = 'https://img.vietqr.io/image/970436-1071000579864-compact2.png?amount=' + amount + '&addInfo=' + encodeURIComponent(qrContent) + '&accountName=PHAN%20HOAI%20VY';
+      // Link chuẩn VietQR
+      const qrUrl = 'https://img.vietqr.io/image/VCB-1071000579864-compact2.png?amount=' + amount + '&addInfo=' + encodeURIComponent(qrContent) + '&accountName=PHAN%20HOAI%20VY';
 
       const qrImg = document.getElementById('modalBillQR'); 
       if(qrImg) {
-          qrImg.crossOrigin = "anonymous"; 
+          // QUAN TRỌNG: Xóa thuộc tính crossOrigin và referrerpolicy để trình duyệt không chặn ảnh trên Vercel
+          qrImg.removeAttribute('crossOrigin');
+          qrImg.setAttribute('referrerpolicy', 'no-referrer');
+          qrImg.dataset.rawUrl = qrUrl; // Lưu lại link gốc để phục vụ nút Tải Về
+          
+          // Cơ chế tự động chuyển sang máy chủ dự phòng nếu mạng chặn img.vietqr.io
+          qrImg.onerror = function() {
+              if (!this.src.includes('wsrv.nl')) {
+                  this.src = 'https://wsrv.nl/?url=' + encodeURIComponent(qrUrl);
+              }
+          };
           qrImg.src = qrUrl;
       }
       
       document.getElementById('billModal').classList.remove('hidden');
     }
 
-    function closeBillModal() { document.getElementById('billModal').classList.add('hidden'); }
+    function closeBillModal() { 
+      document.getElementById('billModal').classList.add('hidden'); 
+    }
 
-    function downloadBillJPG() {
+    async function downloadBillJPG() {
       const captureArea = document.getElementById('billCaptureArea');
       const gv = document.getElementById('modalBillTeacher').innerText;
       const btn = document.getElementById('btnDownloadJPG');
+      const qrImg = document.getElementById('modalBillQR');
       const orig = btn.innerHTML;
       
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tải...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
       btn.disabled = true;
 
       function removeVietnameseTones(str) {
          return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
       }
 
+      // Chuyển đổi ảnh QR sang Base64 nội bộ trước khi chụp để html2canvas không bị lỗi trắng ảnh
+      if (qrImg && qrImg.src && !qrImg.src.startsWith('data:')) {
+        const targetUrl = qrImg.dataset.rawUrl || qrImg.src;
+        try {
+          let resp = await fetch(targetUrl);
+          let blob = await resp.blob();
+          let base64Url = await new Promise(resolve => {
+            let reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+          });
+          qrImg.src = base64Url;
+        } catch (e) {
+          try {
+            // Nếu fetch trực tiếp bị vướng CORS, đi qua cầu nối wsrv.nl để lấy Base64
+            let proxyUrl = 'https://wsrv.nl/?url=' + encodeURIComponent(targetUrl);
+            let resp2 = await fetch(proxyUrl);
+            let blob2 = await resp2.blob();
+            let base64Url2 = await new Promise(resolve => {
+              let reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob2);
+            });
+            qrImg.src = base64Url2;
+          } catch (errProxy) {
+            console.warn('Không thể chuyển đổi Base64:', errProxy);
+          }
+        }
+      }
+
       setTimeout(() => {
-        html2canvas(captureArea, { scale: 2.5, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+        html2canvas(captureArea, { scale: 2.5, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' }).then(canvas => {
           const link = document.createElement('a');
           link.download = 'PhieuThu_' + removeVietnameseTones(gv).replace(/\s+/g, '_') + '.jpg';
           link.href = canvas.toDataURL('image/jpeg', 1.0);
@@ -2395,6 +2439,7 @@ currentConfigData.sort((a, b) => {
       }, 300);
     }
 
+    
     function populateHistoryMonthFilter() {
         const sel = document.getElementById('historyMonthFilter');
         if(!sel) return;
