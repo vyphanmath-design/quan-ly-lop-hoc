@@ -86,7 +86,9 @@
     .bg-striped-off { background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.06) 0, rgba(0,0,0,0.06) 4px, transparent 4px, transparent 8px); background-color: #f1f5f9 !important; border-color: #cbd5e1 !important; }
   /* Tối ưu giao diện trên điện thoại */
     @media (max-width: 640px) {
-      body { padding: 4px !important; }
+      body { 
+        padding: 4px 4px calc(95px + env(safe-area-inset-bottom)) 4px !important; 
+      }
       table { font-size: 10px !important; }
       .tkb-cell-editable { min-height: 36px !important; padding: 2px !important; }
     }
