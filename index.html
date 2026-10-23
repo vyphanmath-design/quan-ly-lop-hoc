@@ -2347,10 +2347,11 @@ currentConfigData.sort((a, b) => {
       }
       
       let cleanGv = removeVietnameseTones(gv);
-      let qrContent = 'Giao vien ' + cleanGv + ' - thu phi thang ' + monthStr;
+      // Lược bỏ bớt ký tự đặc biệt trong nội dung CK để API hoạt động ổn định nhất
+      let qrContent = 'Giao vien ' + cleanGv + ' thu phi ' + monthStr.replace(/\//g, '-');
       
-      // ĐÃ SỬA: Đổi "VCB" thành "970436" (Mã BIN Vietcombank) và ".png" thành ".jpg" để API VietQR nhận diện chuẩn xác
-      const qrUrl = 'https://img.vietqr.io/image/970436-1071000579864-compact2.jpg?amount=' + amount + '&addInfo=' + encodeURIComponent(qrContent) + '&accountName=PHAN%20HOAI%20VY';
+      // ĐÃ SỬA: Đưa về chuẩn mã BIN 970436 và đuôi bắt buộc .png của VietQR
+      const qrUrl = 'https://img.vietqr.io/image/970436-1071000579864-compact2.png?amount=' + amount + '&addInfo=' + encodeURIComponent(qrContent) + '&accountName=PHAN%20HOAI%20VY';
 
       const qrImg = document.getElementById('modalBillQR'); 
       if(qrImg) {
